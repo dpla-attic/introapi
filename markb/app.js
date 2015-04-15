@@ -66,12 +66,29 @@ SubjectListView.prototype.drawPreformatted = function(data) {
 };
 
 
+/* Pulled from JavaScript: The Definitive Guide */
+function getArgs() {
+    var args = {};
+    var query = location.search.substring(1);
+    var pairs = query.split('&');
+    for (var i = 0; i < pairs.length; i++) {
+        var pos = pairs[i].indexOf('=');
+        if (pos == -1) continue;
+        var argname = pairs[i].substring(0, pos);
+        var value = pairs[i].substring(pos + 1);
+        value = decodeURIComponent(value);
+        args[argname] = value;
+    }
+    return args;
+}
+
+
 function main() {
-    apiKey = ''; // TODO: un-hardcode this
+    apiKey = (getArgs()['api_key'] || null);
     if (apiKey) {
         slView = new SubjectListView(apiKey)
         slView.load();
     } else {
-        alert('Please fill in your API key in app.js.');
+        alert('Please fill in your API key with the query parameter api_key.');
     }
 }
