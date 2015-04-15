@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- This code uses jQuery -->
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    
+    <script type="text/javascript">
+
+      /* 
+       * This function will execute when the Document Object Model (DOM) is
+       * ready for JavaScript to execute.
+       */
+      $( document ).ready( function() {
+
+        // This is the base url for making calls to the DPLA API.
+        var baseUrl = "http://api.dp.la/v2/items?";
+
+        /*
+         * These query opts will be appended to your base url as parameters.
+         * You add or delete opts based on your needs for each query. The only
+         * required opt is "api_key".  See the DPLA API codex for more
+         * information: http://dp.la/info/developers/codex/requests/
+         *
+         * You should ideally store your api key in a separate, private file.
+         */
+        var queryOpts = { 
+          "api_key": "66b24c8ffcca9b7708d33ecddaec1d2d", 
+          "q": "animalia", 
+          "sourceResource.type": "image",
+          "fields": "id,object",
+          "page_size": "100",
+          "page": "1"
+        };
+
+        queryDplaApi( baseUrl, queryOpts );
+      });
+
+      // This function sends and AJAX query to the DPLA API.
+      function queryDplaApi( baseUrl, queryOpts ) {
+        $.ajax({
+          url: baseUrl,
+          data: queryOpts,
+          dataType: "jsonp" //allows you to make requests from a non-dpla domain
+        }).done( function( data ) {
+            // This function executes if the api request is successful.
+            renderApiResponse( data );
+        }).fail( function(xhr, textStatus, errorThrown) {
+          // This function executes if the api request fails.
+          $("#output").html( "Your request to the DPLA API failed." );
+          console.log( errorThrown );
+        });
+      }
+
+      /* 
+       * This function iterates through the "docs" in the API reponse and
+       * renders DOM elements with the data.
+       */
+      function renderApiResponse( data ) {
+      
+        $.each( data["docs"], function( index, doc ) {
+
+          var image_element = $( document.createElement( "img" ) )
+            .attr( "src", doc["object"] )
+            .css( "margin", "10px" ); //some light styling
+
+          var link_element = $( document.createElement( "a" ) )
+            .attr( "href", "http://dp.la/item/" + doc["id"] )
+            .append( image_element );
+
+          $( "#output" ).append( link_element );
+        }); 
+      }
+    </script>
+  </head>
+  
+  <body>
+    <h1>Animalia</h1>
+    <p>This is a sample DPLA API app. It displays images matching the keyword query "animalia."</p>
+    <div id="output"></div>
+  </body>
+</html>
