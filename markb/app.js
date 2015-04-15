@@ -4,14 +4,17 @@
  */
 
 function Subjects(apiKey) {
-    baseUrl = 'http://api.dp.la/v2/items?fields=sourceResource.subject'
+    // We're cheating and selecting subjects where subject matches "cat" in
+    // order to avoid records with empty subjects.
+    baseUrl = 'http://api.dp.la/v2/items?fields=sourceResource.subject' +
+              '&sourceResource.subject=cat'
     this.apiKey = apiKey;
     this.url = baseUrl + '&api_key=' + apiKey;
 }
 
 Subjects.prototype.get = function(opts) {
     successCb = (opts['successCb'] || function() {});
-    failCb = (opts['failCb'] || null)
+    failCb = (opts['failCb'] || null);
     $.ajax({
         'url': this.url,
         'dataType': 'jsonp'
@@ -31,7 +34,9 @@ Subjects.prototype.get = function(opts) {
  * Views
  */
 
-function SubjectListView(apiKey) {
+function SubjectListView($parent, apiKey) {
+    _.bindAll(this, 'load', 'drawList', 'noData', 'drawPreformatted');
+    this.$parent = $parent;
     this.subjects = new Subjects(apiKey);
 }
 
@@ -49,7 +54,7 @@ SubjectListView.prototype.drawList = function(data) {
                 $list.append($li);
             });
         });
-        $('#main').append($list);
+        this.$parent.append($list);
     } else {
         this.noData();
     }
@@ -57,12 +62,12 @@ SubjectListView.prototype.drawList = function(data) {
 
 SubjectListView.prototype.noData =  function() {
     $p = $('<p>');
-    $p.innerHTML = 'No data';
-    $('#main').prepend($p);
+    $p.text('No data');
+    this.$parent.prepend($p);
 };
 
 SubjectListView.prototype.drawPreformatted = function(data) {
-    $('#main').html('<pre>' + JSON.stringify(data) + '</pre>');
+    this.$parent.html('<pre>' + JSON.stringify(data) + '</pre>');
 };
 
 
@@ -86,7 +91,7 @@ function getArgs() {
 function main() {
     apiKey = (getArgs()['api_key'] || null);
     if (apiKey) {
-        slView = new SubjectListView(apiKey)
+        slView = new SubjectListView($('#main'), apiKey)
         slView.load();
     } else {
         alert('Please fill in your API key with the query parameter api_key.');
