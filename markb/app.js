@@ -1,14 +1,22 @@
 
-/*
+/********
  * Models
- */
+ ********/
 
+
+/******************************************
+ * Subjects -- a collection of subject data
+ */
 function Subjects(apiKey) {
     baseUrl = 'http://api.dp.la/v2/items?callback=?'
     this.apiKey = apiKey;
     this.url = baseUrl + '&api_key=' + apiKey;
 }
 
+/* get
+ * ---
+ * Given a callback, execute it by passing an Array of subject strings
+ */
 Subjects.prototype.get = function(opts) {
     successCb = (opts['successCb'] || function() {});
     failCb = (opts['failCb'] || null);
@@ -26,29 +34,47 @@ Subjects.prototype.get = function(opts) {
             successCb(data);
         },
         'error': function() {
-            // If you can avoid using JSONP, and use $.ajax() instead, you will
+            // If we could avoid using JSONP, and use $.ajax() instead, we would
             // have available much more information in the error response for
-            // providing better feedback and diagnostics.
+            // providing better feedback and diagnostics.  We have to use JSONP,
+            // however, for a browser-based application that uses the DPLA API
+            // but is not served from the api.dp.la domain.
             alert('Failed to retrieve subjects.');
         }
     });
 };
 
 
-/*
+/*******
  * Views
- */
+ *******/
 
+
+/***************************************
+ * SubjectListView -- a list of subjects
+ *
+ * params:
+ * - $parent:  DOM element
+ * - apiKey:   API key string
+ */
 function SubjectListView($parent, apiKey) {
     _.bindAll(this, 'render', 'drawList', 'noData', 'drawPreformatted');
     this.$parent = $parent;
     this.subjects = new Subjects(apiKey);
 }
 
+/* render
+ * ------
+ * Render the view
+ */
 SubjectListView.prototype.render = function() {
     this.subjects.get({'successCb': this.drawList});
 };
 
+/* drawList
+ * --------
+ * Draw an unordered list of subject strings
+ */
 SubjectListView.prototype.drawList = function(data) {
     if (data['docs'].length) {
         $list = $('<ul>');
@@ -65,12 +91,20 @@ SubjectListView.prototype.drawList = function(data) {
     }
 };
 
+/* noData
+ * ------
+ * Draw a response for no data
+ */
 SubjectListView.prototype.noData =  function() {
     $p = $('<p>');
     $p.text('No data');
     this.$parent.prepend($p);
 };
 
+/* drawPreformatted
+ * ----------------
+ * For debugging:  draw a JSON string for the given data
+ */
 SubjectListView.prototype.drawPreformatted = function(data) {
     this.$parent.html('<pre>' + JSON.stringify(data) + '</pre>');
 };
