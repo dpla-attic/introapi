@@ -18,8 +18,10 @@ function Subjects(apiKey) {
  * Given a callback, execute it by passing an Array of subject strings
  */
 Subjects.prototype.get = function(opts) {
-    successCb = (opts['successCb'] || function() {});
-    failCb = (opts['failCb'] || null);
+
+    var successCb = (opts['successCb'] || function() {});
+    var failCb = (opts['failCb'] || null);
+    var that = this;
 
     $.jsonp({
         'url': this.url,
@@ -31,7 +33,8 @@ Subjects.prototype.get = function(opts) {
         },
         'cache': true,
         'success': function(data) {
-            successCb(data);
+            docs = (data.docs || []);  // probably assigned, but be paranoid
+            successCb(that.subjectsFromDocs(docs));
         },
         'error': function() {
             // If we could avoid using JSONP, and use $.ajax() instead, we would
@@ -42,6 +45,21 @@ Subjects.prototype.get = function(opts) {
             alert('Failed to retrieve subjects.');
         }
     });
+};
+
+/*
+ * subjectsFromDocs
+ * ----------------
+ * Given a DPLA API 'docs' object, return an array of all of the subject strings
+ */
+Subjects.prototype.subjectsFromDocs = function(docs) {
+    subjects = [];
+    _.each(docs, function(doc) {
+        _.each(doc['sourceResource.subject'], function(s) {
+            subjects.push(s.name);
+        });
+    });
+    return subjects;
 };
 
 
@@ -75,15 +93,13 @@ SubjectListView.prototype.render = function() {
  * --------
  * Draw an unordered list of subject strings
  */
-SubjectListView.prototype.drawList = function(data) {
-    if (data['docs'].length) {
+SubjectListView.prototype.drawList = function(subjectNames) {
+    if (subjectNames.length) {
         $list = $('<ul>');
-        _.each(data['docs'], function(doc) {
-            _.each(doc['sourceResource.subject'], function(subj) {
-                $li = $('<li>');
-                $li.text(subj['name']);
-                $list.append($li);
-            });
+        _.each(subjectNames, function(name) {
+            $li = $('<li>');
+            $li.text(name);
+            $list.append($li);
         });
         this.$parent.append($list);
     } else {
