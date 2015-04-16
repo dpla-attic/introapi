@@ -4,10 +4,7 @@
  */
 
 function Subjects(apiKey) {
-    // We're cheating and selecting subjects where subject matches "cat" in
-    // order to avoid records with empty subjects.
-    baseUrl = 'http://api.dp.la/v2/items?fields=sourceResource.subject' +
-              '&sourceResource.subject=cat'
+    baseUrl = 'http://api.dp.la/v2/items?callback=?'
     this.apiKey = apiKey;
     this.url = baseUrl + '&api_key=' + apiKey;
 }
@@ -15,18 +12,28 @@ function Subjects(apiKey) {
 Subjects.prototype.get = function(opts) {
     successCb = (opts['successCb'] || function() {});
     failCb = (opts['failCb'] || null);
-    $.ajax({
+
+    $.jsonp({
         'url': this.url,
-        'dataType': 'jsonp'
-    }).done(
-        function(data) {
+        'data': {
+            'fields': 'sourceResource.subject',
+            // We're cheating and selecting subjects where subject matches "cat" in
+            // order to avoid records with empty subjects.
+            'sourceResource.subject': 'cat'
+        },
+        'cache': true,
+        'success': function(data) {
             successCb(data);
+        },
+        'error': function(xOptions, textStatus) {
+            if (failCb) {
+                failCb(xOptions, textStatus);
+            } else {
+                alert(textStatus);
+                console.log(xOptions);
+            }
         }
-    ).fail(
-        function(xhr, textStatus, errorThrown) {
-            alert(errorThrown)
-        }
-    );
+    });
 };
 
 
