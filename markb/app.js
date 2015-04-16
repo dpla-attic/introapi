@@ -17,21 +17,19 @@ Subjects.prototype.get = function(opts) {
         'url': this.url,
         'data': {
             'fields': 'sourceResource.subject',
-            // We're cheating and selecting subjects where subject matches "cat" in
-            // order to avoid records with empty subjects.
+            // We're cheating and selecting subjects where subject matches "cat"
+            // in order to avoid records with empty subjects.
             'sourceResource.subject': 'cat'
         },
         'cache': true,
         'success': function(data) {
             successCb(data);
         },
-        'error': function(xOptions, textStatus) {
-            if (failCb) {
-                failCb(xOptions, textStatus);
-            } else {
-                alert(textStatus);
-                console.log(xOptions);
-            }
+        'error': function() {
+            // If you can avoid using JSONP, and use $.ajax() instead, you will
+            // have available much more information in the error response for
+            // providing better feedback and diagnostics.
+            alert('Failed to retrieve subjects.');
         }
     });
 };
@@ -42,12 +40,12 @@ Subjects.prototype.get = function(opts) {
  */
 
 function SubjectListView($parent, apiKey) {
-    _.bindAll(this, 'load', 'drawList', 'noData', 'drawPreformatted');
+    _.bindAll(this, 'render', 'drawList', 'noData', 'drawPreformatted');
     this.$parent = $parent;
     this.subjects = new Subjects(apiKey);
 }
 
-SubjectListView.prototype.load = function() {
+SubjectListView.prototype.render = function() {
     this.subjects.get({'successCb': this.drawList});
 };
 
@@ -99,7 +97,7 @@ function main() {
     apiKey = (getArgs()['api_key'] || null);
     if (apiKey) {
         slView = new SubjectListView($('#main'), apiKey)
-        slView.load();
+        slView.render();
     } else {
         alert('Please fill in your API key with the query parameter api_key.');
     }
