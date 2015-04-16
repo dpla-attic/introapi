@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <!-- This code uses jQuery -->
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <!-- This code uses the jQuery library -->
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
     
     <script type="text/javascript">
 
@@ -11,7 +11,10 @@
        * ready for JavaScript to execute.
        */
       $( document ).ready( function() {
+        queryDplaApi();
+      });
 
+      function queryDplaApi() {
         // This is the base url for making calls to the DPLA API.
         var baseUrl = "http://api.dp.la/v2/items?";
 
@@ -25,29 +28,45 @@
          */
         var queryOpts = { 
           "api_key": "<your api key>", 
-          "q": "animalia", 
+          "q": "dogs", 
           "sourceResource.type": "image",
           "fields": "id,object",
-          "page_size": "100",
+          "page_size": "50",
           "page": "1"
         };
 
-        queryDplaApi( baseUrl, queryOpts );
-      });
+        sendApiRequest( baseUrl, queryOpts );
+      }
 
-      // This function sends and AJAX query to the DPLA API.
-      function queryDplaApi( baseUrl, queryOpts ) {
+      /*
+       * This function sends and AJAX query to the DPLA API.
+       * 
+       * Specifying the data type as JSONP allows you to make requests to the
+       * DPLA API from a non-DPLA domain.  
+       * However, $.ajax does not support error handling for cross domain JSONP
+       * requests.  This means the 'error' function won't execute in the case of
+       * 400, 404, and 500 errors, etc.
+       * One workaround is to set a timeout to catch these otherwise silent
+       * failures. A drawback of this method is that in the case of an error,
+       * there will be a slight delay before the 'error' function executes.
+       * An alternative workaround is the jquery-jsonp plugin, which uses
+       * $.jsonp instead of $.ajax (see markb's example).
+       */
+      function sendApiRequest( baseUrl, queryOpts ) {
         $.ajax({
           url: baseUrl,
           data: queryOpts,
-          dataType: "jsonp" //allows you to make requests from a non-dpla domain
-        }).done( function( data ) {
+          dataType: "jsonp",
+          timeout: 5000,
+          success: function( data ) {
             // This function executes if the api request is successful.
             renderApiResponse( data );
-        }).fail( function(xhr, textStatus, errorThrown) {
-          // This function executes if the api request fails.
-          $("#output").html( "Your request to the DPLA API failed." );
-          console.log( errorThrown );
+          },
+          error: function( parsedJson, textStatus, errorThrown ) {
+            renderApiError();
+            console.log( "There was an error with the DPLA API request" );
+            console.log( JSON.stringify( parsedJson ) );
+          }
         });
       }
 
@@ -56,12 +75,10 @@
        * renders DOM elements with the data.
        */
       function renderApiResponse( data ) {
-      
         $.each( data["docs"], function( index, doc ) {
 
           var image_element = $( document.createElement( "img" ) )
-            .attr( "src", doc["object"] )
-            .css( "margin", "10px" ); //some light styling
+            .attr( "src", doc["object"] );
 
           var link_element = $( document.createElement( "a" ) )
             .attr( "href", "http://dp.la/item/" + doc["id"] )
@@ -70,12 +87,21 @@
           $( "#output" ).append( link_element );
         }); 
       }
+
+      function renderApiError() {
+        $( "#output" ).html( "There was an error with the API request." );
+      }
+
     </script>
+
+    <style type="text/css">
+      img{ width: 200px; margin: 10px; }
+    </style>
   </head>
   
   <body>
-    <h1>Animalia</h1>
-    <p>This is a sample DPLA API app. It displays images matching the keyword query "animalia."</p>
+    <h1>Dogs</h1>
+    <p>This is a sample DPLA API app. It displays images of dogs.</p>
     <div id="output"></div>
   </body>
 </html>
