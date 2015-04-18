@@ -8,9 +8,8 @@
  * Subjects -- a collection of subject data
  */
 function Subjects(apiKey) {
-    baseUrl = 'http://api.dp.la/v2/items?callback=?'
+    this.url = 'http://api.dp.la/v2/items'
     this.apiKey = apiKey;
-    this.url = baseUrl + '&api_key=' + apiKey;
 }
 
 /* get
@@ -23,27 +22,21 @@ Subjects.prototype.get = function(opts) {
     var failCb = (opts['failCb'] || null);
     var that = this;
 
-    $.jsonp({
+    $.ajax({
         'url': this.url,
         'data': {
             'fields': 'sourceResource.subject',
             // We're cheating and selecting subjects where subject matches "cat"
             // in order to avoid records with empty subjects.
-            'sourceResource.subject': 'cat'
+            'sourceResource.subject': 'cat',
+            'api_key': this.apiKey
         },
-        'cache': true,
+        'timeout': 3000,  // Give up after 3 seconds
         'success': function(data) {
             docs = (data.docs || []);  // probably assigned, but be paranoid
             successCb(that.subjectsFromDocs(docs));
         },
-        'error': function() {
-            // If we could avoid using JSONP, and use $.ajax() instead, we would
-            // have available much more information in the error response for
-            // providing better feedback and diagnostics.  We have to use JSONP,
-            // however, for a browser-based application that uses the DPLA API
-            // but is not served from the api.dp.la domain.
-            alert('Failed to retrieve subjects.');
-        }
+        'error': alertError
     });
 };
 
@@ -142,6 +135,24 @@ function getArgs() {
     return args;
 }
 
+/* Display errors from bad requests */
+function alertError(xhr) {
+    // Errors where xhr.status == 0 are network connection errors.
+    // If xhr.status is set, the server was able to give a response.
+    if (xhr.status > 0) {
+        try {
+            // In the event of an error that the API can handle, responseText
+            // will be an Object like {"message": "something"}
+            rt = JSON.parse(xhr.responseText);
+            msg = rt.message;
+        } catch(e) {
+            msg = 'Unexpected error retrieving your data';
+        }
+        alert(msg);
+    } else {
+        alert('Could not connect to the DPLA API');
+    }
+}
 
 function main() {
     apiKey = (getArgs()['api_key'] || null);
